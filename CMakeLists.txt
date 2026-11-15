@@ -69,13 +69,8 @@ foreach(SH ${SHADERS})
 endforeach()
 add_custom_target(pegasus_shaders DEPENDS ${SPIRV_FILES})
 
-# --- Application ---------------------------------------------------------------
-add_executable(pegasus
-  src/main.cpp
-  src/App.cpp
-  src/render/VulkanContext.cpp
-  src/render/Renderer.cpp
-  src/render/Png.cpp
+# --- Core library (everything without a window: geometry, robot, motion, serial) ---
+add_library(pegasus_core STATIC
   src/scene/Mesh.cpp
   src/scene/StlLoader.cpp
   src/scene/Primitives.cpp
@@ -90,6 +85,22 @@ add_executable(pegasus
   src/motion/Seam.cpp
   src/motion/PathPlanner.cpp
   src/motion/SurfaceScan.cpp
+  src/hw/SerialPort.cpp
+  src/hw/ArduinoLink.cpp)
+target_include_directories(pegasus_core PUBLIC src)
+find_package(Threads REQUIRED)
+target_link_libraries(pegasus_core PUBLIC imgui_lib glm::glm Threads::Threads)
+target_compile_definitions(pegasus_core PUBLIC
+  GLM_ENABLE_EXPERIMENTAL
+  PEGASUS_LIBRARY_DIR="${CMAKE_CURRENT_SOURCE_DIR}/library")
+
+# --- Application ---------------------------------------------------------------
+add_executable(pegasus
+  src/main.cpp
+  src/App.cpp
+  src/render/VulkanContext.cpp
+  src/render/Renderer.cpp
+  src/render/Png.cpp
   src/editor/Camera.cpp
   src/editor/Picking.cpp
   src/editor/Editor.cpp
@@ -97,19 +108,13 @@ add_executable(pegasus
   src/editor/Editor_Motion.cpp
   src/editor/Editor_Select.cpp
   src/editor/Editor_Arduino.cpp
-  src/hw/SerialPort.cpp
-  src/hw/ArduinoLink.cpp
   src/editor/FileBrowser.cpp
   src/editor/SelfTest.cpp)
 add_dependencies(pegasus pegasus_shaders)
-target_include_directories(pegasus PRIVATE src)
-find_package(Threads REQUIRED)
-target_link_libraries(pegasus PRIVATE imgui_lib glm::glm Vulkan::Vulkan glfw Threads::Threads)
-target_compile_definitions(pegasus PRIVATE
-  GLM_ENABLE_EXPERIMENTAL
-  PEGASUS_SHADER_DIR="${SHADER_OUT_DIR}"
-  PEGASUS_LIBRARY_DIR="${CMAKE_CURRENT_SOURCE_DIR}/library")
+target_link_libraries(pegasus PRIVATE pegasus_core Vulkan::Vulkan glfw)
+target_compile_definitions(pegasus PRIVATE PEGASUS_SHADER_DIR="${SHADER_OUT_DIR}")
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  target_compile_options(pegasus_core PRIVATE -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers)
   target_compile_options(pegasus PRIVATE -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers)
 endif()
 
@@ -120,3 +125,10 @@ add_executable(pegasus_arduino_sim arduino/sim/sim_main.cpp)
 target_include_directories(pegasus_arduino_sim PRIVATE arduino/sim)
 set_source_files_properties(arduino/sim/sim_main.cpp PROPERTIES OBJECT_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/arduino/pegasus_arm/pegasus_arm.ino)
 add_dependencies(pegasus pegasus_arduino_sim)
+
+# --- Offline tests (no window, no board): ctest --test-dir build --output-on-failure ---
+option(PEGASUS_BUILD_TESTS "Build the offline tests" ON)
+if(PEGASUS_BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(tests)
+endif()

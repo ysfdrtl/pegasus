@@ -361,10 +361,29 @@ library/    motions/*.pmotion (kenar hareketleri), scans/*.pscan (tarama desenle
             Editor_Select (bağlı / döngü / fırça seçimi, büyüt-küçült),
             Picking, Camera, FileBrowser, SelfTest
 arduino/    pegasus_arm/pegasus_arm.ino (Uno firmware'i), sim/ (firmware'i PC'de çalıştıran simülatör)
+tests/      çevrimdışı testler (ctest)
 shaders/    mesh.vert/frag (türev tabanlı düz gölgeleme), line.vert/frag
 ```
 
-Otomatik arayüz testi (gerçek fare olaylarını simüle eder, her adımın ekran görüntüsünü kaydeder):
+### Testler
+
+**Çevrimdışı testler** pencere ve kart gerektirmez, birkaç saniyede biter (`tests/`):
+
+```bash
+ctest --test-dir build --output-on-failure
+```
+
+| test | kapsam |
+|---|---|
+| `geom_test` | ağ kaynaklama ve topoloji, ışın / nokta-içinde, çarpışma ve temas, STL okuma |
+| `expr_test` | formül derleyici: işleçler, fonksiyonlar, dalga biçimleri, hata mesajları |
+| `motion_test` | `library/` dosyaları, dikiş çerçevesi, düz ve sinüs hareketleri |
+| `ik_test` | robot modeli, FK tutarlılığı, SDLS/DLS yakınsaması (300 poz), eğim (ikincil görev) |
+| `scan_test` | yüzey tarama: 12 senaryo (ofset, aralık, delik, eğri, kapalı küre, kubbe, köşe, küpte geçiş) |
+| `link_test` | gerçek robot modeliyle küpün iki yüzü, 3 uzaklık × 24 yerleşim: uç küpe girmiyor, tabanca açıkken kol dönmüyor |
+
+**Arayüz testleri** gerçek fare olaylarını simüle eder ve her adımın ekran görüntüsünü kaydeder (pencere ekranda
+görünür olmalı):
 
 ```bash
 ./build/pegasus --selftest /tmp/pegasus-test

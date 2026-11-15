@@ -405,6 +405,28 @@ bool buildTrajectory(const IkSolver& ik, const Robot& robot, const IkTool& tool,
                         }
                         if (fixed) break;
                     }
+                    if (!fixed && !startQ.empty()) {
+                        // last resort, like an industrial "safe position": back off, swing over through the
+                        // pose the program started from (usually high and away from the workpieces), come back
+                        PathPoint home = a;
+                        home.q = startQ;
+                        const glm::mat4 F = ik.toolFrame(robot, startQ, tool);
+                        home.pos = glm::vec3(F[3]);
+                        home.dir = glm::normalize(glm::vec3(F[2]));
+                        home.phase = PathPhase::Link;
+                        home.solved = home.reachable = true;
+                        for (float k : {0.0f, 1.0f, 2.0f, 4.0f}) {
+                            PathPoint A2 = a, B2 = b;
+                            if (k > 0.0f && (!offsetPose(a, -a.dir * base * k, A2) || !offsetPose(b, -b.dir * base * k, B2))) continue;
+                            if (moveClear(a.q, A2.q) && moveClear(A2.q, home.q) && moveClear(home.q, B2.q) && moveClear(B2.q, b.q)) {
+                                if (k > 0.0f) safe.push_back(A2);
+                                safe.push_back(home);
+                                if (k > 0.0f) safe.push_back(B2);
+                                fixed = true;
+                                break;
+                            }
+                        }
+                    }
                     if (!fixed) ++blocked;
                 }
             }
