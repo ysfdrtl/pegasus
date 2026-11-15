@@ -323,6 +323,7 @@ private:
     bool selectSelfTest_ = false;
     bool arduinoSelfTest_ = false;
     std::string arduinoCfgOverride_; // tests: keep the user's robot folder untouched
+    long arduinoErrBase_ = 0;
     std::string selfTestDir_, captureRequest_;
     int selfTestFrame_ = 0;
     int selfTestFailures_ = 0;

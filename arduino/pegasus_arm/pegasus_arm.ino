@@ -24,16 +24,23 @@
     S <kanal 1-6> <a>                             OK      (tek servo, hız sınırıyla)
     V <derece/saniye>                             OK      (en yüksek servo hızı, 1..600)
     L <kanal> <min> <max>                         OK      (kanal sınırları, 0..1800)
-    HOME                                          OK      (başlangıç pozu)
+    HOME                                          OK      (başlangıç pozu; servoları ilk kez sürer)
     STOP                                          OK      (kuyruğu boşalt, olduğu yerde dur)
     ATTACH / DETACH                               OK      (servoları sür / serbest bırak)
-    GET                                           POS <hareket 0/1> <a1> .. <a6> <kuyruktaki_boş_yer>
-    (açılışta)                                    READY pegasus-arm <sürüm>
+    GET                                           POS <hareket 0/1> <a1> .. <a6> <kuyruktaki_boş_yer> <homed 0/1>
+    (açılışta)                                    READY pegasus-arm <sürüm> servolar serbest
     (hata)                                        ERR <kod> <açıklama>
 
   "M" komutları bir kuyruğa (8 adım) girer; her adım, mevcut konumdan hedefe <süre_ms> içinde
   doğrusal olarak gider. Süre, hız sınırını aşmayacak şekilde gerekirse uzatılır. Bilgisayar
   "A" cevabındaki boş yer sayısına bakarak kuyruğu taşırmadan akış (streaming) yapar.
+
+  Açılış: kart açıldığında (ve bilgisayar portu açıp kartı yeniden başlattığında) servolara HİÇ darbe
+  gönderilmez; servolar serbesttir ve kol hareket etmez. Kol ancak elle verilen "HOME" komutuyla
+  başlangıç pozuna alınır. HOME verilmeden M / S / ATTACH reddedilir (ERR 6). Kartın servoların gerçek
+  konumunu bilmesinin bir yolu olmadığından ilk HOME'da servolar başlangıç pozuna kendi hızlarıyla
+  gider: HOME'dan önce kolu elle başlangıç pozuna yakın getirin. DETACH'tan sonra kol elle
+  oynatılabileceği için yeniden HOME gerekir.
 
   Güvenlik: "M" ile akış başladıktan sonra bilgisayar 1.5 s boyunca hiç komut göndermezse (uygulama
   kapandı, kablo çekildi) kuyruk boşaltılır ve kol olduğu yerde durur. Uygulama bağlıyken her 0.5 s'de
@@ -42,7 +49,7 @@
 
 #include <Servo.h>
 
-#define PEGASUS_FW_VERSION "1.0"
+#define PEGASUS_FW_VERSION "1.1"
 
 const uint8_t NCH = 6;
 const uint8_t PINS[NCH] = {5, 6, 7, 8, 9, 10};
@@ -67,6 +74,7 @@ unsigned long stepStart = 0, stepDuration = 0;
 bool stepActive = false;
 float maxSpeed = 90.0f; // derece / saniye
 bool attached = false;
+bool homed = false; // HOME verildi mi (konum biliniyor ve servolar sürülüyor)
 
 Step queue[QUEUE_LEN];
 uint8_t qHead = 0, qCount = 0;
@@ -200,7 +208,15 @@ void printPositions(const char* tag) {
     Serial.print((int)(current[i] + 0.5f));
   }
   Serial.print(' ');
-  Serial.println((int)(QUEUE_LEN - qCount));
+  Serial.print((int)(QUEUE_LEN - qCount));
+  Serial.println(homed ? " 1" : " 0");
+}
+
+// HOME verilmeden servolar sürülmez: konum bilinmiyor
+bool requireHomed() {
+  if (homed) return true;
+  reply("ERR 6 once HOME komutu verin (servolar serbest)");
+  return false;
 }
 
 bool startsWith(const char* s, const char* cmd) {
@@ -215,8 +231,10 @@ void handleLine(char* s) {
   if (startsWith(s, "PING")) {
     reply("PONG");
   } else if (startsWith(s, "INFO")) {
-    reply("INFO pegasus-arm " PEGASUS_FW_VERSION " ch=6 pins=5,6,7,8,9,10");
+    Serial.print("INFO pegasus-arm " PEGASUS_FW_VERSION " ch=6 pins=5,6,7,8,9,10 homed=");
+    Serial.println(homed ? 1 : 0);
   } else if (startsWith(s, "M")) {
+    if (!requireHomed()) return;
     if (parseInts(s + 1, v, NCH + 2) != NCH + 2) {
       reply("ERR 2 M: seq sure a1..a6 bekleniyor");
       return;
@@ -236,6 +254,7 @@ void handleLine(char* s) {
     Serial.print(' ');
     Serial.println(QUEUE_LEN - qCount);
   } else if (startsWith(s, "S")) {
+    if (!requireHomed()) return;
     if (parseInts(s + 1, v, 2) != 2 || v[0] < 1 || v[0] > NCH) {
       reply("ERR 2 S: kanal(1-6) aci bekleniyor");
       return;
@@ -265,18 +284,26 @@ void handleLine(char* s) {
     reply("OK");
   } else if (startsWith(s, "HOME")) {
     stopMotion();
-    pushStep(HOME_POS, 0);
-    if (!attached) attachAll();
+    if (!homed) {
+      // konum bilinmiyor: servolar başlangıç pozuna doğrudan (kendi hızlarıyla) gider
+      for (uint8_t i = 0; i < NCH; i++) current[i] = startPos[i] = goal[i] = clampPos(i, HOME_POS[i]);
+      attachAll();
+      homed = true;
+    } else {
+      pushStep(HOME_POS, 0); // konum biliniyor: hız sınırıyla
+    }
     reply("OK");
   } else if (startsWith(s, "STOP")) {
     stopMotion();
     reply("OK");
   } else if (startsWith(s, "ATTACH")) {
+    if (!requireHomed()) return;
     attachAll();
     reply("OK");
   } else if (startsWith(s, "DETACH")) {
     stopMotion();
     detachAll();
+    homed = false; // kol elle oynatılabilir: yeniden HOME gerekir
     reply("OK");
   } else if (startsWith(s, "GET")) {
     printPositions("POS");
@@ -315,9 +342,11 @@ void setup() {
     maxPos[i] = 1800;
     current[i] = startPos[i] = goal[i] = HOME_POS[i];
   }
-  attachAll(); // başlangıç pozunda tut
+  // servolar serbest: HOME komutu gelene kadar hiçbir pine darbe gönderilmez
+  attached = false;
+  homed = false;
   lastCommand = millis();
-  reply("READY pegasus-arm " PEGASUS_FW_VERSION);
+  reply("READY pegasus-arm " PEGASUS_FW_VERSION " servolar serbest");
 }
 
 void loop() {

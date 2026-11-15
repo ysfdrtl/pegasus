@@ -38,6 +38,8 @@ struct LinkStatus {
     int freeSlots = 0;
     bool streaming = false;
     bool havePositions = false, moving = false;
+    // false until the user sends HOME: the board does not drive the servos before that (firmware 1.1+)
+    bool homed = false;
     std::array<float, kServoChannels> servoDeg{}; // positions reported by the board (degrees)
     std::chrono::steady_clock::time_point connectedSince{};
 };

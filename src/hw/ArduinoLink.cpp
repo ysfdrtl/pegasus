@@ -119,6 +119,7 @@ void ArduinoLink::handleLine(const std::string& line) { // worker thread
     if (!quiet || logStreamFrames) addLog("< " + line);
     if (tag == "READY") {
         gotReady_ = true;
+        st_.homed = false; // a (re)started board leaves the servos free until HOME
         if (st_.state == LinkState::Connected) {
             // the board restarted while connected (power dip when the servos start, reset button)
             st_.resets++;
@@ -135,6 +136,10 @@ void ArduinoLink::handleLine(const std::string& line) { // worker thread
         is >> name >> ver;
         if (name == "pegasus-arm") {
             st_.firmware = name + " " + ver;
+            // 1.1+: "homed=0/1"; 1.0 drove the servos from power-on
+            st_.homed = ver == "1.0";
+            for (std::string kv; is >> kv;)
+                if (kv.rfind("homed=", 0) == 0) st_.homed = kv.substr(6) == "1";
             if (st_.state == LinkState::Connecting) {
                 st_.state = LinkState::Connected;
                 st_.message = "Bağlı";
@@ -165,12 +170,18 @@ void ArduinoLink::handleLine(const std::string& line) { // worker thread
             st_.freeSlots = freeSlots;
             if (freeSlots == 8) inflight_ = 0;
         }
+        int homed = 0;
+        if (is >> homed) st_.homed = homed != 0;
     } else if (tag == "ERR") {
         st_.errors++;
         int code = 0;
         is >> code;
         if (code == 3) inflight_ = std::max(0, inflight_ - 1); // queue full: frame dropped
         if (code == 5) st_.streaming = false;                   // watchdog stopped the arm
+        if (code == 6) {                                        // not homed yet: nothing moves
+            st_.streaming = false;
+            st_.homed = false;
+        }
     }
 }
 

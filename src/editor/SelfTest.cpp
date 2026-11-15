@@ -1166,7 +1166,7 @@ void Editor::selfTestArduinoInject() {
         const LinkStatus st = link_->status();
         if (st.state == LinkState::Connected) {
             check(true, "baglandi: " + st.port);
-            check(st.firmware == "pegasus-arm 1.0", "firmware tanindi (" + st.firmware + ")");
+            check(st.firmware == "pegasus-arm 1.1", "firmware tanindi (" + st.firmware + ")");
             check(elapsed() < 3.0f, "kartin acilmasi (READY) + el sikisma < 3 s (" + std::to_string(elapsed()) + " s)");
             next();
         } else if (st.state == LinkState::Error || elapsed() > 6.0f) {
@@ -1175,8 +1175,44 @@ void Editor::selfTestArduinoInject() {
         }
         break;
     }
-    case 3:
+    case 3: // power-on / connect: the servos must stay free until HOME
         if (elapsed() > 0.6f) {
+            const LinkStatus st = link_->status();
+            check(st.havePositions && !st.homed, "baglaninca servolar serbest (HOME verilmedi, hicbir sey surulmuyor)");
+            followRobot_ = true; // must be refused by the app
+            link_->send("S 1 1200"); // must be refused by the board
+            step = 30;
+            stepStart = Clock::now();
+        }
+        break;
+    case 30:
+        if (elapsed() > 0.5f) {
+            const LinkStatus st = link_->status();
+            check(!followRobot_, "HOME'dan once canli takip acilamiyor");
+            check(st.errors >= 1 && !st.homed && std::abs(st.servoDeg[0] - 90.0f) < 0.05f, "HOME'dan once S komutu reddedildi (ERR 6), servo hareket etmedi");
+            check(st.framesSent == 0, "HOME'dan once karta hic hareket gonderilmedi");
+            capture("49_arduino_serbest.png");
+            link_->send("HOME");
+            step = 31;
+            stepStart = Clock::now();
+        }
+        break;
+    case 31: {
+        const LinkStatus st = link_->status();
+        if (st.homed && st.havePositions) {
+            check(std::abs(st.servoDeg[0] - 90.0f) < 0.05f && std::abs(st.servoDeg[1] - 150.0f) < 0.05f && std::abs(st.servoDeg[5] - 80.0f) < 0.05f,
+                  "HOME: servolar baslangic pozunda (90/150/35/140/85/80)");
+            arduinoErrBase_ = st.errors; // the refused S before HOME was an expected error
+            step = 32;
+            stepStart = Clock::now();
+        } else if (elapsed() > 3.0f) {
+            check(false, "HOME sonrasi homed bildirilmedi");
+            step = 100;
+        }
+        break;
+    }
+    case 32:
+        if (elapsed() > 0.3f) {
             const LinkStatus st = link_->status();
             check(st.havePositions, "kart konumlari okunuyor (GET)");
             check(st.rttMs > 0.0f && st.rttMs < 100.0f, "PING gecikmesi " + std::to_string(st.rttMs) + " ms");
@@ -1191,7 +1227,8 @@ void Editor::selfTestArduinoInject() {
             sendServoLimits();
             followRobot_ = true;
             if (getenv("ARDDBG")) link_->logStreamFrames = true;
-            next();
+            step = 4;
+            stepStart = Clock::now();
         }
         break;
     case 4:
@@ -1214,7 +1251,8 @@ void Editor::selfTestArduinoInject() {
         } else if (elapsed() > 2.6f) {
             check(boardMatches(0.15f), "surekli hareket (50 Hz akis) sonunda kart modelle ayni");
             const LinkStatus st = link_->status();
-            check(st.framesSent > 50 && st.errors == 0, "akis: " + std::to_string(st.framesSent) + " hareket, " + std::to_string(st.errors) + " hata");
+            check(st.framesSent > 50 && st.errors == arduinoErrBase_,
+                  "akis: " + std::to_string(st.framesSent) + " hareket, " + std::to_string(st.errors - arduinoErrBase_) + " hata");
             if (getenv("ARDDBG")) for (const auto& l : link_->log()) std::printf("LOG %s\n", l.c_str());
             // emergency stop during a long move
             servoSpeed_ = 40.0f;
@@ -1279,9 +1317,22 @@ void Editor::selfTestArduinoInject() {
             check(std::abs(link_->status().servoDeg[0] - 120.0f) < 0.1f, "kart tarafinda sinir: S 1 1700 -> 120 derecede kaldi");
             capture("52_arduino_kalibrasyon.png");
             link_->send("L 1 0 1800");
+            link_->send("DETACH");
+            step = 21;
+            stepStart = Clock::now();
+        }
+        break;
+    case 21:
+        if (elapsed() > 0.6f) {
+            const LinkStatus st = link_->status();
+            check(!st.homed, "DETACH sonrasi servolar serbest, yeniden HOME gerekiyor");
+            followRobot_ = true;
+            updateArduino();
+            check(!followRobot_, "DETACH sonrasi canli takip acilamiyor");
             if (sim > 0) {
                 kill(sim, SIGTERM); // "cable pulled"
-                next();
+                step = 9;
+                stepStart = Clock::now();
             } else { // real board: we cannot pull the cable, disconnect instead
                 link_->disconnect();
                 step = 20;

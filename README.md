@@ -295,6 +295,12 @@ ardından oturumu kapatıp açın.
 Menü **Arduino > Bağlantı penceresi** (ya da alt durum çubuğundaki "Arduino: ..." yazısına tıklayın):
 - **Port** listesinde Arduino'lar (`/dev/ttyACM*`, CH340 klonlar `/dev/ttyUSB*`) en üstte görünür; **Yenile** listeyi
   günceller, listede olmayan bir port **Port yolu** kutusuna elle yazılabilir. Baud: 115200.
+- **Açılışta servolar serbest**: firmware 1.1'den itibaren kart açıldığında ve bağlanıldığında servolara hiç
+  darbe gönderilmez, kol hareket etmez ("Arduino: bağlı, servolar serbest"). Kolu elle başlangıç pozuna yakın
+  getirip **Home konumuna al**'a basın: servolar ilk kez sürülür ve kol başlangıç pozuna (90/150/35/140/85/80)
+  geçer. Kartın servoların gerçek konumunu bilme imkânı olmadığından bu ilk hareket servoların kendi hızıyla
+  olur. Home alınana kadar canlı takip, elle sürme ve hareket komutları kapalıdır (kart da reddeder: `ERR 6`).
+  **Servoları serbest bırak**'tan sonra (kol elle oynatılabileceği için) yeniden Home gerekir.
 - **Bağlan**: Uno port açılınca kendini yeniden başlatır; uygulama kartın `READY` mesajını bekler, firmware'i doğrular
   (`INFO`) ve bağlanır. Durum renkli gösterilir (gri: bağlı değil, sarı: bağlanıyor, yeşil: bağlı, kırmızı: hata ve
   nedeni). Bağlıyken gecikme (PING), son yanıt zamanı, gönderilen/onaylanan hareket ve hata sayısı görünür.
@@ -305,8 +311,8 @@ Menü **Arduino > Bağlantı penceresi** (ya da alt durum çubuğundaki "Arduino
   böylece takip açıldığında kol modelin pozuna yavaşça gider.
 - **ACİL DURDUR** (ya da uygulamanın her yerinde **Space** tuşu; yalnızca bir metin kutusuna yazarken Space
   yazıya gider): kartın hareket kuyruğunu boşaltır, kol olduğu yerde durur, takip ve animasyon kapanır.
-  **Başlangıç pozu** firmware'deki başlangıç pozuna (90/150/35/140/85/80) gider; **Servoları serbest bırak** servolara
-  darbe göndermeyi keser.
+  **Başlangıç pozuna git** (Home alındıktan sonra) başlangıç pozuna hız sınırıyla gider; **Servoları serbest bırak**
+  servolara darbe göndermeyi keser.
 - **Haberleşme günlüğü**: gönderilen (`>`) ve gelen (`<`) satırlar; alttaki kutudan elle komut gönderilebilir.
 
 ### 4. Kalibrasyon
@@ -328,15 +334,16 @@ Arduino IDE seri monitörü ile de denenebilir.
 | komut | cevap | anlamı |
 |---|---|---|
 | `PING` | `PONG` | canlılık kontrolü (uygulama 0.5 s'de bir gönderir) |
-| `INFO` | `INFO pegasus-arm 1.0 ch=6 pins=5,6,7,8,9,10` | firmware kimliği |
+| `INFO` | `INFO pegasus-arm 1.1 ch=6 pins=5,6,7,8,9,10 homed=0` | firmware kimliği ve Home durumu |
 | `M <seq> <ms> <a1>..<a6>` | `A <seq> <boş yer>` | 6 servoya birlikte, `<ms>` içinde doğrusal git (8 adımlık kuyruğa) |
 | `S <kanal> <a>` | `OK` | tek servo |
 | `V <°/s>` | `OK` | hız sınırı |
 | `L <kanal> <min> <max>` | `OK` | kanal sınırları |
-| `HOME`, `STOP`, `ATTACH`, `DETACH` | `OK` | başlangıç pozu, dur, servoları sür / bırak |
-| `GET` | `POS <hareket> <a1>..<a6> <boş yer>` | anlık konumlar |
-| (açılış) | `READY pegasus-arm 1.0` | kart hazır |
-| hatalı komut | `ERR <kod> <açıklama>` | 1 bilinmeyen, 2 parametre, 3 kuyruk dolu, 4 satır uzun, 5 zaman aşımı |
+| `HOME` | `OK` | başlangıç pozu; açılıştan / DETACH'tan sonra servoları ilk kez sürer |
+| `STOP`, `ATTACH`, `DETACH` | `OK` | dur, servoları sür / bırak (DETACH sonrası yeniden HOME gerekir) |
+| `GET` | `POS <hareket> <a1>..<a6> <boş yer> <homed>` | anlık konumlar; `homed` = 0 iken servolar serbest |
+| (açılış) | `READY pegasus-arm 1.1 servolar serbest` | kart hazır, hiçbir servo sürülmüyor |
+| hatalı komut | `ERR <kod> <açıklama>` | 1 bilinmeyen, 2 parametre, 3 kuyruk dolu, 4 satır uzun, 5 zaman aşımı, 6 önce HOME |
 
 Kart her `M` adımını kendi içinde 100 Hz ile ara değerler ve adımları boşluksuz zincirler; süre, hız sınırını
 aşmayacak şekilde uzatılır. Uygulama kuyruktaki boş yer bilgisine göre gönderir, bu yüzden gecikme birikmez (her

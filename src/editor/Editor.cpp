@@ -404,7 +404,8 @@ void Editor::drawStatusBar() {
                 const LinkStatus ls = link_ ? link_->status() : LinkStatus{};
                 const ImVec4 col = ls.state == LinkState::Connected ? ImVec4(0.4f, 0.9f, 0.45f, 1) : ls.state == LinkState::Error ? ImVec4(1, 0.45f, 0.4f, 1)
                                  : ls.state == LinkState::Connecting ? ImVec4(1, 0.8f, 0.3f, 1) : ImVec4(0.6f, 0.6f, 0.6f, 1);
-                const char* txt = ls.state == LinkState::Connected ? (followRobot_ ? "Arduino: bağlı, canlı takip" : "Arduino: bağlı")
+                const char* txt = ls.state == LinkState::Connected ? (!ls.homed ? "Arduino: bağlı, servolar serbest"
+                                                                     : followRobot_ ? "Arduino: bağlı, canlı takip" : "Arduino: bağlı")
                                 : ls.state == LinkState::Error ? "Arduino: hata" : ls.state == LinkState::Connecting ? "Arduino: bağlanıyor" : "Arduino: bağlı değil";
                 ImGui::PushStyleColor(ImGuiCol_Text, col);
                 if (ImGui::Selectable(txt, false, ImGuiSelectableFlags_None, ImVec2(ImGui::CalcTextSize(txt).x, 0))) showArduino_ = true;

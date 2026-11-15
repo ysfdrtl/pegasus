@@ -150,6 +150,10 @@ void Editor::updateArduino() {
     }
     lastLinkState_ = st.state;
     if (st.state != LinkState::Connected) return;
+    if (followRobot_ && !st.homed) {
+        followRobot_ = false; // board reset / servos released: the arm must be homed again
+        notify("Servolar serbest: canlı takip kapatıldı. Devam etmek için 'Home konumuna al'.", true);
+    }
     // manual sliders show where the servos really are (no jump on the first touch)
     if (st.havePositions && !jogActive_)
         for (int i = 0; i < kServoChannels; ++i) servoChannels_[size_t(i)].jog = st.servoDeg[size_t(i)];
@@ -246,7 +250,20 @@ void Editor::drawArduinoWindow() {
 
     // ---- control
     ImGui::SeparatorText("Kontrol");
-    ImGui::BeginDisabled(st.state != LinkState::Connected);
+    const bool connected = st.state == LinkState::Connected;
+    if (connected && st.firmware == "pegasus-arm 1.0")
+        ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.3f, 1.0f),
+                           "Karttaki firmware eski (1.0): açılışta servoları sürüyor. arduino/pegasus_arm/pegasus_arm.ino'yu yeniden yükleyin.");
+    if (connected && !st.homed) {
+        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.35f, 1.0f), "Servolar serbest: kol hiçbir komutla hareket etmez.");
+        ImGui::TextWrapped("Kolu elle başlangıç pozuna yakın getirin, sonra 'Home konumuna al'a basın. Konum bilinmediği için "
+                           "servolar başlangıç pozuna kendi hızlarıyla gider.");
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.45f, 0.75f, 1.0f));
+        if (ImGui::Button("Home konumuna al")) link_->send("HOME");
+        ImGui::PopStyleColor();
+        ImGui::SetItemTooltip("Servoları ilk kez sürer ve kolu başlangıç pozuna (90/150/35/140/85/80) alır.");
+    }
+    ImGui::BeginDisabled(!connected || !st.homed);
     if (ImGui::Checkbox("Robotu takip et (canlı)", &followRobot_) && followRobot_)
         notify("Gerçek kol modelin pozuna gidiyor (hız sınırı " + std::to_string(int(servoSpeed_)) + " °/s).");
     ImGui::SetItemTooltip("Açıkken gerçek kol, ekrandaki modelin eklem açılarını izler: eklem kaydırıcıları,\n"
@@ -255,17 +272,18 @@ void Editor::drawArduinoWindow() {
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10.0f);
     if (ImGui::SliderFloat("Hız sınırı", &servoSpeed_, 5.0f, 300.0f, "%.0f °/s")) {}
     if (ImGui::IsItemDeactivatedAfterEdit()) link_->send("V " + std::to_string(int(std::lround(servoSpeed_))));
-    if (ImGui::Button("Başlangıç pozu")) {
+    if (ImGui::Button("Başlangıç pozuna git")) {
         followRobot_ = false;
         link_->send("HOME");
     }
-    ImGui::SetItemTooltip("Firmware'deki başlangıç pozuna gider (örnek koddaki 90/150/35/140/85/80).");
+    ImGui::SetItemTooltip("Firmware'deki başlangıç pozuna hız sınırıyla gider (örnek koddaki 90/150/35/140/85/80).");
     ImGui::SameLine();
     if (ImGui::Button("Servoları serbest bırak")) {
         followRobot_ = false;
         link_->send("DETACH");
     }
-    ImGui::SetItemTooltip("Servolara darbe gönderimi durur; kol elle hareket ettirilebilir (yerçekimiyle düşebilir!).");
+    ImGui::SetItemTooltip("Servolara darbe gönderimi durur; kol elle hareket ettirilebilir (yerçekimiyle düşebilir!).\n"
+                          "Sonrasında yeniden 'Home konumuna al' gerekir.");
     ImGui::EndDisabled();
     ImGui::SameLine();
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.75f, 0.12f, 0.1f, 1.0f));
@@ -320,7 +338,8 @@ void Editor::drawArduinoWindow() {
             else ImGui::Text("%.1f°", tgt);
             if (std::abs(raw - tgt) > 0.05f) ImGui::SetItemTooltip("Servo sınırına takıldı (istenen %.1f°)", raw);
             ImGui::TableNextColumn();
-            if (st.havePositions) ImGui::Text("%.1f°", st.servoDeg[size_t(i)]);
+            if (st.havePositions && st.homed) ImGui::Text("%.1f°", st.servoDeg[size_t(i)]);
+            else if (st.havePositions) ImGui::TextDisabled("serbest"); // not driven: the real position is unknown
             else ImGui::TextDisabled("-");
             ImGui::TableNextColumn();
             ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4.0f);
@@ -338,7 +357,7 @@ void Editor::drawArduinoWindow() {
             }
             if (ImGui::IsItemDeactivatedAfterEdit()) limitsChanged = true;
             ImGui::TableNextColumn();
-            ImGui::BeginDisabled(st.state != LinkState::Connected || followRobot_);
+            ImGui::BeginDisabled(st.state != LinkState::Connected || followRobot_ || !st.homed);
             ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5.0f);
             if (ImGui::SliderFloat("##jog", &c.jog, c.minDeg, c.maxDeg, "%.0f°") && link_)
                 link_->send("S " + std::to_string(i + 1) + " " + std::to_string(int(std::lround(c.jog * 10.0f))));
