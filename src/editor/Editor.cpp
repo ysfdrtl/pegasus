@@ -288,6 +288,7 @@ void Editor::update(float dt) {
     handleShortcuts();
     if (showHelp_) drawHelpWindow();
     drawArduinoWindow();
+    updateUndo(); // after all edits of this frame
 
     std::string picked;
     if (fileBrowser_.draw(picked)) openStl(picked);
@@ -357,6 +358,9 @@ void Editor::drawMenuBar() {
         ImGui::EndMenu();
     }
     if (ImGui::BeginMenu("Düzen")) {
+        if (ImGui::MenuItem("Geri al", "Ctrl+Z", false, !undoStack_.empty())) undo();
+        if (ImGui::MenuItem("Yinele", "Ctrl+Y", false, !redoStack_.empty())) redo();
+        ImGui::Separator();
         if (ImGui::MenuItem("Çoğalt", "Ctrl+D", false, active != nullptr)) duplicateActive();
         if (ImGui::MenuItem("Sil", "Delete", false, active != nullptr)) deleteObject(activeObject_);
         if (ImGui::MenuItem("Zemine indir", "G", false, active != nullptr)) dropToGround(*active);
@@ -446,6 +450,8 @@ void Editor::handleShortcuts() {
     if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_O)) fileBrowser_.open();
     if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_Q)) quitRequested_ = true;
     if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_D)) duplicateActive();
+    if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_Z)) undo();
+    if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_Y) || ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiMod_Shift | ImGuiKey_Z)) redo();
     if (tool_ == Tool::Face) {
         if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_L)) selectLinkedFromSelection();
         if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_Equal) || ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_KeypadAdd) ||
@@ -510,6 +516,7 @@ void Editor::drawHelpWindow() {
                 {"F / Home", "Seçili nesneye / tümüne odaklan"},
                 {"G", "Seçili nesneyi zemine indir"},
                 {"Ctrl+D / Delete", "Çoğalt / sil"},
+                {"Ctrl+Z / Ctrl+Y", "Geri al / yinele (Ctrl+Shift+Z de yineler)"},
                 {"Ctrl+O", "STL aç (dosyayı pencereye sürükleyip bırakmak da olur)"},
                 {"Esc", "Seçimi temizle"},
                 {"Space", "ACİL DURDUR: gerçek kol ve hareket animasyonu durur, canlı takip kapanır"},

@@ -118,6 +118,7 @@ add_executable(pegasus
   src/editor/Editor_Robot.cpp
   src/editor/Editor_Motion.cpp
   src/editor/Editor_Select.cpp
+  src/editor/Editor_Undo.cpp
   src/editor/Editor_Arduino.cpp
   src/editor/FileBrowser.cpp
   src/editor/SelfTest.cpp

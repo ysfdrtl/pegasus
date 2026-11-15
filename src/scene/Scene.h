@@ -45,6 +45,8 @@ public:
     SceneObject* duplicate(uint32_t id);
     void remove(uint32_t id);
     void clear();
+    // Replaces all objects with copies of `objs`, keeping their ids (undo / redo).
+    void restore(const std::vector<SceneObject>& objs);
 
     SceneObject* find(uint32_t id);
     const SceneObject* find(uint32_t id) const;

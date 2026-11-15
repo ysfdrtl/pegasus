@@ -164,6 +164,24 @@ private:
         float minDeg = 0.0f, maxDeg = 180.0f;
         float jog = 90.0f;    // manual slider
     };
+    // --- undo / redo (Editor_Undo.cpp)
+    struct UndoState {
+        std::vector<SceneObject> objects;
+        bool hasRobot = false;
+        std::vector<RobotJoint> joints;
+        glm::mat4 mount{1.0f};
+        int tcpPart = -1;
+        glm::vec3 tcpPoint{0.0f};
+    };
+    UndoState captureState() const;
+    bool sameState(const UndoState& a, const UndoState& b) const;
+    std::string describeChange(const UndoState& from, const UndoState& to) const;
+    void restoreState(const UndoState& s);
+    void updateUndo();
+    void clearHistory();
+    void undo();
+    void redo();
+
     void drawArduinoWindow();
     void emergencyStop(); // Space / button / menu: stop the real arm and the run animation
     void updateArduino();
@@ -222,6 +240,11 @@ private:
     uint64_t lastHoverVersion_ = 0;
     glm::mat4 lastHoverView_{0.0f};
     Tool lastHoverTool_ = Tool::Object;
+
+    // undo / redo
+    std::vector<UndoState> undoStack_, redoStack_;
+    UndoState committed_;
+    const Robot* undoRobot_ = nullptr;
 
     // Arduino
     std::unique_ptr<ArduinoLink> link_;

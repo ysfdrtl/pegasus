@@ -57,6 +57,15 @@ void Scene::remove(uint32_t id) {
     markDirty();
 }
 
+void Scene::restore(const std::vector<SceneObject>& objs) {
+    objects_.clear();
+    for (const auto& o : objs) {
+        objects_.push_back(std::make_unique<SceneObject>(o));
+        nextId_ = std::max(nextId_, o.id + 1);
+    }
+    markDirty();
+}
+
 void Scene::clear() {
     objects_.clear();
     markDirty();

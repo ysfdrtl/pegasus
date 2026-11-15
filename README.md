@@ -56,8 +56,14 @@ Binary ve ASCII STL desteklenir. Birim mm, Z ekseni yukarı.
 | Sağ/orta sürükle (veya Alt+sol boşlukta) | Kamerayı döndür; Shift ile kaydır; teker: yakınlaş |
 | F / Home | Seçili nesneye / tüm sahneye odaklan |
 | G, Ctrl+D, Delete | Zemine indir, çoğalt, sil |
+| Ctrl+Z / Ctrl+Y | Geri al / yinele (Ctrl+Shift+Z de yineler; Düzen menüsünde de var) |
 | **Space** | **ACİL DURDUR**: gerçek kol olduğu yerde durur, canlı takip ve hareket animasyonu kapanır |
 | F1 | Kısayol listesi |
+
+**Geri al / yinele** (son 100 adım): taşıma, döndürme, ölçekleme, sürükleme, zemine indirme, ekleme, silme,
+çoğaltma, özellik paneli (ad, renk, görünürlük), robot eklem açıları, eklem düzenleyici ve robotun yeri geri
+alınabilir. Bir sürükleme ya da kaydırıcı hareketi tek adımdır. Kamera, seçim ve *Çalıştır* animasyonu geçmişe
+girmez; robot yüklenince ya da kaldırılınca geçmiş sıfırlanır.
 
 **Seçim modları**
 - *Nokta*: ağdaki köşe noktaları (arkada kalan noktalar seçilmez). İki nokta arası mesafe/ağırlık merkezi gösterilir.
@@ -386,7 +392,7 @@ library/    motions/*.pmotion (kenar hareketleri), scans/*.pscan (tarama desenle
   hw/       SerialPort (Linux seri port), ArduinoLink (arka plan iş parçacığında protokol, akış, bağlantı izleme)
   editor/   Editor (arayüz, araçlar, gizmo, sürükleme), Editor_Robot (robot paneli), Editor_Motion (hareket paneli),
             Editor_Arduino (Arduino penceresi, servo kalibrasyonu),
-            Editor_Select (bağlı / döngü / fırça seçimi, büyüt-küçült),
+            Editor_Select (bağlı / döngü / fırça seçimi, büyüt-küçült), Editor_Undo (geri al / yinele),
             Picking, Camera, FileBrowser, SelfTest
 arduino/    pegasus_arm/pegasus_arm.ino (Uno firmware'i), sim/ (firmware'i PC'de çalıştıran simülatör)
 tests/      çevrimdışı testler (ctest)
@@ -421,6 +427,18 @@ görünür olmalı):
 ./build/pegasus --selftest-select "robot kol stl parçaları" /tmp/pegasus-select-test
 ./build/pegasus --selftest-arduino "robot kol stl parçaları" /tmp/pegasus-arduino-test
 ```
+
+## Bekleyen işler
+
+- [ ] **Firmware 1.1'in gerçek kartta denenmesi** (Arduino'ya erişilince). Firmware 1.1 yalnızca simülatörde test
+  edildi; karttaki sürüm hâlâ 1.0. Adımlar:
+    1. Arduino IDE ile `arduino/pegasus_arm/pegasus_arm.ino` dosyasını Uno'ya yükleyin.
+    2. Servolar bağlı değilken testi çalıştırın:
+       `PEGASUS_TEST_PORT=/dev/ttyACM0 ./build/pegasus --selftest-arduino "robot kol stl parçaları" /tmp/pegasus-arduino-hw`
+       Beklenen: `[arduino-test] TUM TESTLER GECTI`, ilk satırlarda "firmware tanindi (pegasus-arm 1.1)" ve
+       "baglaninca servolar serbest".
+    3. Servoları bağlayıp uygulamada elle deneyin: bağlanınca kol kıpırdamamalı; **Home konumuna al** ile başlangıç
+       pozuna geçmeli; **Servoları serbest bırak**'tan sonra yeniden Home istenmeli.
 
 ## Notlar
 - Bağlantı şeması `Arduino-Robot-Arm-Schematic-Circuit-Diagram.png` (HC-05 hariç). Telefon / Bluetooth kontrolü yoktur;

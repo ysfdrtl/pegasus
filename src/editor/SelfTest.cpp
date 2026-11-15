@@ -63,6 +63,8 @@ void Editor::selfTestInject() {
     SceneObject* sph = obj(2);
     const glm::vec3 bp = box ? box->transform.position : glm::vec3(0);
 
+    static uint32_t u_box = 0, u_cyl = 0, u_sph = 0;
+    static glm::vec3 u_cylStart(0.0f), u_sphStart(0.0f), u_cylAfter(0.0f), u_sphAfter(0.0f);
     switch (f) {
     case 2:
         addPrimitive(0, glm::vec3(80.0f, 60.0f, 40.0f));
@@ -161,11 +163,88 @@ void Editor::selfTestInject() {
         check(selection_.size() == 1 && selection_[0].objectId == sph->id, "yumusak yuzey secimi (kure)");
         capture("07_kure_yuzey.png");
         break;
-    case 120:
+    // ---- undo / redo with the real keyboard shortcuts
+    case 120: {
+        u_box = box->id;
+        u_cyl = cyl->id;
+        u_sph = sph->id;
+        u_cylAfter = cyl->transform.position;
+        u_sphAfter = sph->transform.position;
+        check(glm::length(u_cylAfter - u_cylStart) > 1.0f, "silindir surukleme ile yer degistirdi (geri alinacak)");
+        io.AddKeyEvent(ImGuiMod_Ctrl, true);
+        io.AddKeyEvent(ImGuiKey_Z, true);
+        break;
+    }
+    case 121:
+        io.AddKeyEvent(ImGuiKey_Z, false);
+        io.AddKeyEvent(ImGuiMod_Ctrl, false);
+        break;
+    case 124: { // last edit = the sphere drag (if it moved at all) -> undo once more for the cylinder
+        const SceneObject* s2 = scene_.find(u_sph);
+        const bool sphMoved = glm::length(u_sphAfter - u_sphStart) > 0.01f;
+        if (sphMoved) check(s2 && glm::length(s2->transform.position - u_sphStart) < 1e-4f, "Ctrl+Z: kure suruklemesi geri alindi");
+        io.AddKeyEvent(ImGuiMod_Ctrl, true);
+        io.AddKeyEvent(ImGuiKey_Z, true);
+        break;
+    }
+    case 125:
+        io.AddKeyEvent(ImGuiKey_Z, false);
+        io.AddKeyEvent(ImGuiMod_Ctrl, false);
+        break;
+    case 128: {
+        const SceneObject* c = scene_.find(u_cyl);
+        check(c && glm::length(c->transform.position - u_cylStart) < 1e-4f, "Ctrl+Z: silindir suruklemeden onceki yerine dondu");
+        check(!collision_.isColliding(u_cyl), "geri alininca carpisma da kalkti");
+        capture("08_geri_al.png");
+        io.AddKeyEvent(ImGuiMod_Ctrl, true);
+        io.AddKeyEvent(ImGuiKey_Y, true);
+        break;
+    }
+    case 129:
+        io.AddKeyEvent(ImGuiKey_Y, false);
+        io.AddKeyEvent(ImGuiMod_Ctrl, false);
+        break;
+    case 132: {
+        const SceneObject* c = scene_.find(u_cyl);
+        check(c && glm::length(c->transform.position - u_cylAfter) < 1e-4f, "Ctrl+Y: silindir surukleme yinelendi");
+        activeObject_ = u_box;
+        io.AddKeyEvent(ImGuiKey_Delete, true);
+        break;
+    }
+    case 133: io.AddKeyEvent(ImGuiKey_Delete, false); break;
+    case 136:
+        check(scene_.find(u_box) == nullptr && scene_.objects().size() == 2, "Delete: kutu silindi");
+        io.AddKeyEvent(ImGuiMod_Ctrl, true);
+        io.AddKeyEvent(ImGuiKey_Z, true);
+        break;
+    case 137:
+        io.AddKeyEvent(ImGuiKey_Z, false);
+        io.AddKeyEvent(ImGuiMod_Ctrl, false);
+        break;
+    case 140: {
+        const SceneObject* b = scene_.find(u_box);
+        check(b && scene_.objects().size() == 3 && glm::length(b->transform.position - bp) < 1e-4f, "Ctrl+Z: silinen kutu ayni kimlik ve yerle geri geldi");
+        // redo of the delete, then undo again: history in both directions
+        redo();
+        check(scene_.find(u_box) == nullptr, "yinele: kutu yeniden silindi");
+        undo();
+        check(scene_.find(u_box) != nullptr, "geri al: kutu tekrar geldi");
+        // an empty history says so instead of doing anything
+        while (!undoStack_.empty()) undo();
+        const size_t n = scene_.objects().size();
+        undo();
+        check(scene_.objects().size() == n, "bos gecmiste geri al sahneyi bozmaz");
+        break;
+    }
+    case 142:
         std::printf("[selftest] %s (%d hata)\n", selfTestFailures_ ? "BASARISIZ" : "TUM TESTLER GECTI", selfTestFailures_);
         quitRequested_ = true;
         break;
     default: break;
+    }
+    if (f == 42 && cyl && sph) {
+        u_cylStart = cyl->transform.position;
+        u_sphStart = sph->transform.position;
     }
     // Interpolated drags (world positions captured when the drag starts)
     static glm::vec3 dragFrom, dragTo, sphereStart;
@@ -353,7 +432,22 @@ void Editor::selfTestRobotInject() {
         capture("15_engel.png");
         break;
     }
-    case 21:
+    case 21: { // undo / redo of joint angles (robot parts are placed by forward kinematics)
+        const int omuz = driver("Omuz");
+        blockOnCollision_ = false;
+        const float before = R->joints[omuz].angleDeg;
+        const glm::mat4 armBefore = R->partWorld(partByName("Arm 02"));
+        setRobotAngle(omuz, before - 20.0f);
+        updateUndo();
+        check(std::abs(R->joints[omuz].angleDeg - (before - 20.0f)) < 1e-3f, "omuz 20 derece cevrildi");
+        undo();
+        check(std::abs(R->joints[omuz].angleDeg - before) < 1e-4f && near(R->partWorld(partByName("Arm 02")), armBefore, 1e-4f),
+              "geri al: eklem acisi ve kol parcalari eski yerinde");
+        redo();
+        check(std::abs(R->joints[omuz].angleDeg - (before - 20.0f)) < 1e-3f, "yinele: eklem acisi tekrar uygulandi");
+        break;
+    }
+    case 23:
         std::printf("[robot-test] %s (%d hata)\n", selfTestFailures_ ? "BASARISIZ" : "TUM TESTLER GECTI", selfTestFailures_);
         (void)obstacleDir;
         quitRequested_ = true;
