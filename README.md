@@ -18,6 +18,25 @@ cmake --build build
 ./build/pegasus parca1.stl parca2.stl
 ```
 
+**Windows (10 sürüm 1903 veya üstü):** Visual Studio 2022 ("C++ ile masaüstü geliştirme") ve
+[Vulkan SDK](https://vulkan.lunarg.com/sdk/home) kurulu olmalı. "x64 Native Tools" komut isteminde:
+
+```bat
+cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+cmake --build build --config Release
+build\Release\pegasus.exe
+```
+
+Windows notları:
+- Program UTF-8 manifestiyle derlenir (`cmake/utf8.manifest`), bu yüzden `robot kol stl parçaları` gibi Türkçe
+  karakterli yollar sorunsuz açılır.
+- Arduino portları `COM3`, `COM4` ... olarak listelenir; `dialout` gibi bir izin ayarı gerekmez. Port meşgul
+  hatası alırsanız Arduino IDE'nin seri monitörünü kapatın.
+- Firmware simülatörü (`pegasus_arduino_sim`) ve `--selftest-arduino` yalnızca Linux'ta çalışır; Windows'ta
+  gerçek kartla bağlantı penceresinden denenir.
+- Her `git push`'ta GitHub Actions projeyi Linux ve Windows'ta derleyip çevrimdışı testleri çalıştırır
+  (`.github/workflows/ci.yml`). Windows'ta grafik arayüz ve gerçek Arduino henüz elle denenmedi.
+
 Ortam değişkenleri:
 - `PEGASUS_GPU=intel` / `PEGASUS_GPU=nvidia` — GPU seçimi (ad içinde arama). Varsayılan: harici GPU.
 - `PEGASUS_VALIDATION=1` — Vulkan validation katmanını açar.
