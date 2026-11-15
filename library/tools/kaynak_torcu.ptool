@@ -1,0 +1,6 @@
+# Pegasus takım (başlık) tanımı
+name = Kaynak torcu
+description = Kıskaca takılan kaynak torcu. Torç ucu parmak uçlarından 45 mm ileride.
+tip_offset = 0 0 45
+radius = 4
+color = 0.95 0.55 0.15

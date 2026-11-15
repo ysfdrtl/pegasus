@@ -1,0 +1,13 @@
+# Pegasus hareket kütüphanesi
+# Yerel eksenler: x = yan (dikişe dik), y = ilerleme yönü, z = yüzey normali (dışarı)
+# Değişkenler: s (yol boyunca mm), u (0..1), L (yol uzunluğu mm), t (saniye), v (hız mm/s)
+name = Dairesel örgü
+description = Dikiş boyunca ilerlerken küçük daireler çizer (kaynakta örgü hareketi).
+param R = 1 | 0 | 20 | mm | Daire yarıçapı
+param P = 2 | 0.5 | 100 | mm | Daire başına ilerleme
+param h = 1 | 0 | 50 | mm | Yüzeyden yükseklik
+x = R * sin(2*pi*s/P)
+y = R * (cos(2*pi*s/P) - 1)
+z = h
+work_angle = 0
+travel_angle = -45

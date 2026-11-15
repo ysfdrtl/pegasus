@@ -1,0 +1,11 @@
+# Pegasus hareket kütüphanesi (örnek)
+name = Zikzak
+description = Dikiş boyunca ilerlerken yana doğru üçgen dalga (zikzak) çizer.
+param A = 1.5 | 0 | 20 | mm | Genlik
+param W = 3 | 0.5 | 100 | mm | Adım (bir tam zikzak)
+param h = 1 | 0 | 50 | mm | Yüzeyden yükseklik
+x = A * tri(s/W)
+y = 0
+z = h
+work_angle = 0
+travel_angle = 0

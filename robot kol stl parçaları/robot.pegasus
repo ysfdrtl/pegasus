@@ -1,0 +1,37 @@
+# Pegasus robot tanimi. Koordinatlar STL (montaj) koordinatlarinda, mm ve derece.
+pegasus_robot 1
+name "robot kol stl parçaları"
+up_axis 1
+mount 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1
+tcp 6 37.1983299 484.897583 95.079567
+# part <dosya> <ad> <ust parca indeksi>
+part "Robotic Arm - Arm 01-1.STL" "Arm 01-1" 14
+part "Robotic Arm - Arm 02 v3-1.STL" "Arm 02 v3-1" 0
+part "Robotic Arm - Arm 03-1.STL" "Arm 03-1" 1
+part "Robotic Arm - Base-1.STL" "Base-1" -1
+part "Robotic Arm - Gripper Assembly-1 Gripper 1-1.STL" "Gripper Assembly-1 Gripper 1-1" 9
+part "Robotic Arm - Gripper Assembly-1 Gripper 1-2.STL" "Gripper Assembly-1 Gripper 1-2" 8
+part "Robotic Arm - Gripper Assembly-1 Gripper base-1.STL" "Gripper Assembly-1 Gripper base-1" 2
+part "Robotic Arm - Gripper Assembly-1 Servo Motor Micro  9g-1.STL" "Gripper Assembly-1 Servo Motor Micro  9g-1" 6
+part "Robotic Arm - Gripper Assembly-1 gear1-1.STL" "Gripper Assembly-1 gear1-1" 6
+part "Robotic Arm - Gripper Assembly-1 gear2-1.STL" "Gripper Assembly-1 gear2-1" 6
+part "Robotic Arm - Gripper Assembly-1 grip link 1-1.STL" "Gripper Assembly-1 grip link 1-1" 6
+part "Robotic Arm - Gripper Assembly-1 grip link 1-2.STL" "Gripper Assembly-1 grip link 1-2" 6
+part "Robotic Arm - Gripper Assembly-1 grip link 1-3.STL" "Gripper Assembly-1 grip link 1-3" 6
+part "Robotic Arm - Gripper Assembly-1 grip link 1-4.STL" "Gripper Assembly-1 grip link 1-4" 6
+part "Robotic Arm - Waist-1.STL" "Waist-1" 3
+# joint <parca> <ad> <tip 0=sabit 1=doner> <orijin xyz> <eksen xyz> <min> <max> <aci> <takip edilen eklem> <carpan> <ofset> <motorlu>
+joint 14 "Bel" 1 61.1511116 94.6075745 92.8487625 0 1 0 -90 90 0 -1 1 0 0
+joint 0 "Omuz" 1 46.9945755 133.472443 92.6692047 -0.00797986984 1.95502761e-08 0.999968171 -90 90 34 -1 1 0 0
+joint 1 "Dirsek" 1 40.363205 253.372955 93.1163025 -0.00798006635 1.47371509e-07 0.999968171 -90 90 68.6999969 -1 1 0 0
+joint 2 "Bilek dönüş" 1 29.6937332 346.090637 105.131546 -0.0580277704 0.998314857 -0.000463067438 -90 90 0 -1 1 0 0
+joint 6 "Bilek eğim" 1 33.217598 372.75824 90.4667587 -0.0044801645 0.000203405521 0.999990046 -90 90 41.0999985 -1 1 0 0
+joint 7 "Sabit: Gripper Assembly-1 Servo Motor Micro  9g-1" 0 0 0 0 0 0 1 -90 90 0 -1 1 0 0
+joint 8 "Kıskaç -> Gripper Assembly-1 gear1-1" 1 45.3200531 411.886047 80.8379211 0.996573091 0.0825971216 0.0044476781 -360 360 0 7 1 0 0
+joint 9 "Kıskaç" 1 47.690979 412.098022 107.748764 -0.996573091 -0.0825972632 -0.0044478639 -52 48 0 -1 1 0 1
+joint 10 "Kıskaç -> Gripper Assembly-1 grip link 1-1" 1 37.4037247 431.303101 88.798584 0.996573091 0.0825971887 0.00444777729 -360 360 0 7 1 0 0
+joint 11 "Kıskaç -> Gripper Assembly-1 grip link 1-2" 1 37.3589249 431.305145 98.7984848 0.996573091 0.0825973898 0.00444780383 -360 360 0 7 -1 0 0
+joint 12 "Kıskaç -> Gripper Assembly-1 grip link 1-3" 1 43.5875092 431.82135 98.8262787 0.996573091 0.0825973898 0.00444780383 -360 360 0 7 -1 0 0
+joint 13 "Kıskaç -> Gripper Assembly-1 grip link 1-4" 1 41.6391602 431.654144 88.8174896 0.996573091 0.0825971887 0.00444777729 -360 360 0 7 1 0 0
+joint 5 "Kıskaç -> Gripper Assembly-1 Gripper 1-2" 1 43.8624649 430.776733 56.6185226 0.996573091 0.0825971439 0.00444784807 -360 360 0 7 -1 0 0
+joint 4 "Kıskaç -> Gripper Assembly-1 Gripper 1-1" 1 47.7537766 431.2276 131.887527 0.996573091 0.0825971588 0.00444793049 -360 360 0 7 1 0 0

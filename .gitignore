@@ -1,0 +1,13 @@
+# derleme çıktısı
+build/
+cmake-build-*/
+
+# Blender kaynak kodu (yalnızca IK çözücüsünü incelemek için indirildi, projenin parçası değil)
+blender-main/
+
+# editör / sistem dosyaları
+.vscode/
+.idea/
+.cache/
+*.swp
+.DS_Store

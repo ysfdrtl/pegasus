@@ -1,0 +1,7 @@
+# Pegasus takım (başlık) tanımı
+# tip_offset: takım ucunun robot TCP çerçevesine göre konumu (mm). Takım ekseni = TCP +Z
+name = Kıskaç
+description = Robotun kendi kıskacı. Uç nokta parmak uçlarının ortası.
+tip_offset = 0 0 0
+radius = 2
+color = 0.9 0.9 0.95

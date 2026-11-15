@@ -1,0 +1,12 @@
+# Pegasus hareket kütüphanesi
+# Yerel eksenler: x = yan (dikişe dik), y = ilerleme yönü, z = yüzey normali (dışarı)
+# Değişkenler: s (yol boyunca mm), u (0..1), L (yol uzunluğu mm), t (saniye), v (hız mm/s)
+# param AD = varsayılan | min | max | birim | etiket
+name = Optimum noktadan düz ilerle
+description = Seçilen dikişin tam ortasından başlar ve yüzeyden h kadar yukarıda düz bir çizgi boyunca ilerler.
+param h = 1 | 0 | 50 | mm | Yüzeyden yükseklik
+x = 0
+y = 0
+z = h
+work_angle = 0
+travel_angle = 0

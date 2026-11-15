@@ -1,0 +1,20 @@
+# Pegasus yüzey tarama kütüphanesi (bkz. zikzak_tarama.pscan)
+name = Dalgalı tarama
+description = Zikzak tarama; her çizgi yana doğru sinüs dalgası yapar (formül örneği).
+param offset = 5 | 0 | 200 | mm | Kenardan boşluk
+param spacing = 12 | 0.5 | 200 | mm | Çizgi aralığı
+param standoff = 50 | 0 | 500 | mm | Yüzeyden uzaklık
+param angle = 0 | -180 | 180 | ° | Tarama açısı
+param lift = 20 | 0 | 200 | mm | Kalkma yüksekliği
+param crease = 60 | 0 | 180 | ° | Kırılma açısı (bu açıdan keskin kenarlar yüzeyi böler)
+param tilt = 30 | 0 | 80 | ° | En fazla eğim (tabanca gerekirse normalden bu kadar sapar, eksen yine hedef noktaya bakar)
+param A = 3 | 0 | 50 | mm | Dalga genliği
+param W = 20 | 1 | 200 | mm | Dalga boyu
+x = A * sin(2*pi*s/W)
+y = 0
+z = 0
+work_angle = 0
+travel_angle = 0
+pattern = zigzag
+link = surface
+orient = surface

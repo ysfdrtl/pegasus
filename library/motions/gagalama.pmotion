@@ -1,0 +1,11 @@
+# Pegasus hareket kütüphanesi (örnek)
+name = Gagalama
+description = İlerlerken her P mm'de bir yüzeyden D kadar uzaklaşıp geri yaklaşır.
+param h = 1 | 0 | 50 | mm | En yakın yükseklik
+param D = 4 | 0 | 50 | mm | Kalkma mesafesi
+param P = 2.5 | 0.5 | 100 | mm | Gagalama aralığı
+x = 0
+y = 0
+z = h + D * (0.5 - 0.5*cos(2*pi*s/P))
+work_angle = 0
+travel_angle = 0

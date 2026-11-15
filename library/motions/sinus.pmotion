@@ -1,0 +1,11 @@
+# Pegasus hareket kütüphanesi (örnek)
+name = Sinüs dalgası
+description = Dikiş boyunca ilerlerken yana doğru sinüs dalgası çizer (A genlik, W dalga boyu).
+param A = 1.5 | 0 | 20 | mm | Genlik
+param W = 4 | 0.5 | 100 | mm | Dalga boyu
+param h = 1 | 0 | 50 | mm | Yüzeyden yükseklik
+x = A * sin(2*pi*s/W)
+y = 0
+z = h
+work_angle = 0
+travel_angle = 0

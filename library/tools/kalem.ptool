@@ -1,0 +1,6 @@
+# Pegasus takım (başlık) tanımı
+name = Kalem
+description = Çizim kalemi. Uç, parmak uçlarından 30 mm ileride.
+tip_offset = 0 0 30
+radius = 2
+color = 0.2 0.5 1.0
