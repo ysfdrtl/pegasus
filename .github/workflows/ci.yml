@@ -35,6 +35,8 @@ jobs:
           version: 1.4.363.1
           cache: true
       - name: Derle (MSVC)
+        env:
+          VULKAN_SDK: ${{ github.workspace }}/VULKAN_SDK # the install step does not export it to later steps
         run: |
           cmake -S . -B build -G "Visual Studio 17 2022" -A x64
           cmake --build build --config Release -j4
