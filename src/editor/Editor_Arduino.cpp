@@ -126,6 +126,17 @@ void Editor::sendServoLimits() {
     }
 }
 
+void Editor::emergencyStop() {
+    const bool wasPlaying = playing_;
+    const bool connected = link_ && link_->connected();
+    followRobot_ = false;
+    if (connected) link_->stop(); // board: queue cleared, arm holds where it is
+    if (playing_) stopRun();
+    if (connected) notify("ACİL DURDUR: kol olduğu yerde durdu, canlı takip kapatıldı.", true);
+    else if (wasPlaying) notify("ACİL DURDUR: hareket animasyonu durduruldu.", true);
+    else notify("ACİL DURDUR (Space): durdurulacak bir hareket yok.", true);
+}
+
 void Editor::updateArduino() {
     if (!link_) return;
     const LinkStatus st = link_->status();
@@ -259,15 +270,9 @@ void Editor::drawArduinoWindow() {
     ImGui::SameLine();
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.75f, 0.12f, 0.1f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.2f, 0.15f, 1.0f));
-    ImGui::BeginDisabled(st.state != LinkState::Connected);
-    if (ImGui::Button("ACİL DURDUR")) {
-        followRobot_ = false;
-        link_->stop();
-        if (playing_) stopRun();
-        notify("Acil durdurma: kol olduğu yerde durdu, takip kapatıldı.", true);
-    }
-    ImGui::EndDisabled();
+    if (ImGui::Button("ACİL DURDUR (Space)")) emergencyStop();
     ImGui::PopStyleColor(2);
+    ImGui::SetItemTooltip("Space tuşu uygulamanın her yerinde aynı işi yapar (metin kutusuna yazarken hariç).");
     if (followRobot_) ImGui::TextColored(ImVec4(0.45f, 0.85f, 1.0f, 1.0f), "Canlı takip açık: modelde yaptığınız her hareket gerçek kola gider.");
 
     // ---- channels

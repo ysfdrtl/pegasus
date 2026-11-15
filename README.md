@@ -56,6 +56,7 @@ Binary ve ASCII STL desteklenir. Birim mm, Z ekseni yukarı.
 | Sağ/orta sürükle (veya Alt+sol boşlukta) | Kamerayı döndür; Shift ile kaydır; teker: yakınlaş |
 | F / Home | Seçili nesneye / tüm sahneye odaklan |
 | G, Ctrl+D, Delete | Zemine indir, çoğalt, sil |
+| **Space** | **ACİL DURDUR**: gerçek kol olduğu yerde durur, canlı takip ve hareket animasyonu kapanır |
 | F1 | Kısayol listesi |
 
 **Seçim modları**
@@ -302,7 +303,8 @@ Menü **Arduino > Bağlantı penceresi** (ya da alt durum çubuğundaki "Arduino
 - **Robotu takip et (canlı)**: gerçek kol, ekrandaki modelin eklem açılarını izler — eklem kaydırıcıları, IK,
   *Çalıştır* animasyonu doğrudan servolara gider (en fazla 50 güncelleme/s). **Hız sınırı** (°/s) kartta uygulanır,
   böylece takip açıldığında kol modelin pozuna yavaşça gider.
-- **ACİL DURDUR**: kartın hareket kuyruğunu boşaltır, kol olduğu yerde durur, takip ve animasyon kapanır.
+- **ACİL DURDUR** (ya da uygulamanın her yerinde **Space** tuşu; yalnızca bir metin kutusuna yazarken Space
+  yazıya gider): kartın hareket kuyruğunu boşaltır, kol olduğu yerde durur, takip ve animasyon kapanır.
   **Başlangıç pozu** firmware'deki başlangıç pozuna (90/150/35/140/85/80) gider; **Servoları serbest bırak** servolara
   darbe göndermeyi keser.
 - **Haberleşme günlüğü**: gönderilen (`>`) ve gelen (`<`) satırlar; alttaki kutudan elle komut gönderilebilir.

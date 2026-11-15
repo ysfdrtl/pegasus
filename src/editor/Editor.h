@@ -165,6 +165,7 @@ private:
         float jog = 90.0f;    // manual slider
     };
     void drawArduinoWindow();
+    void emergencyStop(); // Space / button / menu: stop the real arm and the run animation
     void updateArduino();
     float servoTarget(int channel) const;
     void sendServoLimits();

@@ -1224,9 +1224,19 @@ void Editor::selfTestArduinoInject() {
         }
         break;
     case 6:
-        if (elapsed() > 0.5f && followRobot_) {
-            followRobot_ = false;
-            link_->stop();
+        // emergency stop through the real keyboard path: press and release Space
+        {
+            static int spacePhase = 0;
+            if (spacePhase == 0 && elapsed() > 0.5f) {
+                ImGui::GetIO().AddKeyEvent(ImGuiKey_Space, true);
+                spacePhase = 1;
+            } else if (spacePhase == 1) {
+                ImGui::GetIO().AddKeyEvent(ImGuiKey_Space, false);
+                spacePhase = 2;
+            } else if (spacePhase == 2 && elapsed() > 0.9f) {
+                check(!followRobot_, "Space: acil durdurma kisayolu takibi kapatti");
+                spacePhase = 3;
+            }
         }
         if (elapsed() > 1.3f) {
             const LinkStatus a = link_->status();

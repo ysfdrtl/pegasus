@@ -381,11 +381,8 @@ void Editor::drawMenuBar() {
         ImGui::MenuItem("Bağlantı penceresi", nullptr, &showArduino_);
         if (link_ && link_->connected()) {
             ImGui::MenuItem("Robotu takip et (canlı)", nullptr, &followRobot_);
-            if (ImGui::MenuItem("Acil durdur")) {
-                followRobot_ = false;
-                link_->stop();
-            }
         }
+        if (ImGui::MenuItem("Acil durdur", "Space")) emergencyStop();
         ImGui::EndMenu();
     }
     if (ImGui::BeginMenu("Yardım")) {
@@ -441,6 +438,9 @@ void Editor::drawStatusBar() {
 
 void Editor::handleShortcuts() {
     ImGuiIO& io = ImGui::GetIO();
+    // emergency stop first: works with any window, dialog or tool active (only typing in a text box
+    // keeps Space for the text)
+    if (!io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_Space, false)) emergencyStop();
     if (io.WantTextInput || ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId)) return;
     if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_O)) fileBrowser_.open();
     if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_Q)) quitRequested_ = true;
@@ -511,6 +511,7 @@ void Editor::drawHelpWindow() {
                 {"Ctrl+D / Delete", "Çoğalt / sil"},
                 {"Ctrl+O", "STL aç (dosyayı pencereye sürükleyip bırakmak da olur)"},
                 {"Esc", "Seçimi temizle"},
+                {"Space", "ACİL DURDUR: gerçek kol ve hareket animasyonu durur, canlı takip kapanır"},
             };
             for (auto& r : rows) {
                 ImGui::TableNextRow();
