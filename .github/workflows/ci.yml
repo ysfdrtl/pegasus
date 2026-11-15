@@ -34,6 +34,11 @@ jobs:
           # LunarG keeps roughly the last year of SDKs online: bump this when the download 404s
           version: 1.4.363.1
           cache: true
+      - name: SDK icerigi (teshis)
+        shell: bash
+        run: |
+          ls "$GITHUB_WORKSPACE/VULKAN_SDK" | head -30
+          find "$GITHUB_WORKSPACE/VULKAN_SDK" -maxdepth 3 \( -iname "vulkan-1.lib" -o -iname "vulkan.h" -o -iname "glslc.exe" \) | head
       - name: Derle (MSVC)
         env:
           VULKAN_SDK: ${{ github.workspace }}/VULKAN_SDK # the install step does not export it to later steps
