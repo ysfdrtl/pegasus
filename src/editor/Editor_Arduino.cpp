@@ -202,7 +202,11 @@ void Editor::drawArduinoWindow() {
     if (ImGui::Button("Yenile")) ports_ = SerialPort::list();
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 22.0f);
     ImGui::InputText("Port yolu", portBuf_, sizeof(portBuf_));
+#ifdef _WIN32
+    ImGui::SetItemTooltip("Listede olmayan bir port elle yazılabilir (ör. COM4).");
+#else
     ImGui::SetItemTooltip("Listede olmayan bir port elle yazılabilir (ör. /dev/ttyUSB0).");
+#endif
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8.0f);
     if (ImGui::BeginCombo("Baud", std::to_string(baud_).c_str())) {
         for (int b : kBauds)

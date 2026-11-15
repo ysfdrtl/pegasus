@@ -6,8 +6,10 @@
 #include <chrono>
 #include <csignal>
 #include <filesystem>
+#ifndef _WIN32
 #include <sys/wait.h>
 #include <unistd.h>
+#endif
 
 #include <algorithm>
 #include <cmath>
@@ -1074,6 +1076,12 @@ void Editor::selfTestSelectInject() {
 
 // Arduino link against the firmware simulator (the real pegasus_arm.ino compiled for the PC).
 void Editor::selfTestArduinoInject() {
+#ifdef _WIN32
+    // the firmware simulator needs a POSIX pseudo terminal; on Windows test with a real board
+    // through the Arduino window instead
+    std::printf("[arduino-test] Windows'ta desteklenmiyor (simulator POSIX gerektirir)\n");
+    quitRequested_ = true;
+#else
     using Clock = std::chrono::steady_clock;
     static int step = 0;
     static Clock::time_point t0 = Clock::now(), stepStart = Clock::now();
@@ -1343,6 +1351,7 @@ void Editor::selfTestArduinoInject() {
         quitRequested_ = true;
         step = 101;
     }
+#endif
 }
 
 } // namespace pegasus

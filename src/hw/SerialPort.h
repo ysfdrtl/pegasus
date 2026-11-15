@@ -1,5 +1,6 @@
 #pragma once
-// Minimal POSIX serial port (Linux): raw 8N1, non-blocking.
+// Minimal serial port: raw 8N1, non-blocking. POSIX termios on Linux / macOS (/dev/ttyACM0),
+// Win32 COM ports on Windows (COM3). Same interface and user-facing messages on both.
 
 #include <string>
 #include <vector>
@@ -26,7 +27,7 @@ public:
     // Opens and configures the port. On failure `err` holds a user-facing (Turkish) explanation.
     bool open(const std::string& path, int baud, std::string& err);
     void close();
-    bool isOpen() const { return fd_ >= 0; }
+    bool isOpen() const;
     const std::string& path() const { return path_; }
 
     // Non-blocking. Returns bytes read (0 = nothing available), -1 when the device is gone.
@@ -35,7 +36,11 @@ public:
     bool write(const std::string& data);
 
 private:
+#ifdef _WIN32
+    void* handle_ = nullptr; // HANDLE
+#else
     int fd_ = -1;
+#endif
     std::string path_;
 };
 

@@ -8,6 +8,17 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
+if(MSVC)
+  # sources are UTF-8 (Turkish UI strings); M_PI; no min/max macros from <windows.h>
+  add_compile_options(/utf-8 /permissive- /Zc:__cplusplus)
+  add_compile_definitions(_USE_MATH_DEFINES NOMINMAX WIN32_LEAN_AND_MEAN _CRT_SECURE_NO_WARNINGS)
+endif()
+if(WIN32)
+  add_compile_definitions(_USE_MATH_DEFINES NOMINMAX)
+  # every executable runs with UTF-8 as its ANSI code page: std::string paths work as on Linux
+  set(PEGASUS_WIN_MANIFEST "${CMAKE_CURRENT_SOURCE_DIR}/cmake/utf8.manifest")
+endif()
+
 find_package(Vulkan REQUIRED)
 
 include(FetchContent)
@@ -109,11 +120,12 @@ add_executable(pegasus
   src/editor/Editor_Select.cpp
   src/editor/Editor_Arduino.cpp
   src/editor/FileBrowser.cpp
-  src/editor/SelfTest.cpp)
+  src/editor/SelfTest.cpp
+  ${PEGASUS_WIN_MANIFEST})
 add_dependencies(pegasus pegasus_shaders)
 target_link_libraries(pegasus PRIVATE pegasus_core Vulkan::Vulkan glfw)
 target_compile_definitions(pegasus PRIVATE PEGASUS_SHADER_DIR="${SHADER_OUT_DIR}")
-if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang" AND NOT MSVC)
   target_compile_options(pegasus_core PRIVATE -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers)
   target_compile_options(pegasus PRIVATE -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers)
 endif()
@@ -121,10 +133,13 @@ endif()
 # --- Arduino firmware simulator --------------------------------------------------
 # Runs arduino/pegasus_arm/pegasus_arm.ino on the PC behind a pseudo terminal
 # (/tmp/pegasus-arduino-sim), so the app can be tested without a board.
-add_executable(pegasus_arduino_sim arduino/sim/sim_main.cpp)
-target_include_directories(pegasus_arduino_sim PRIVATE arduino/sim)
-set_source_files_properties(arduino/sim/sim_main.cpp PROPERTIES OBJECT_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/arduino/pegasus_arm/pegasus_arm.ino)
-add_dependencies(pegasus pegasus_arduino_sim)
+# (Linux / macOS only: it needs a POSIX pseudo terminal)
+if(NOT WIN32)
+  add_executable(pegasus_arduino_sim arduino/sim/sim_main.cpp)
+  target_include_directories(pegasus_arduino_sim PRIVATE arduino/sim)
+  set_source_files_properties(arduino/sim/sim_main.cpp PROPERTIES OBJECT_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/arduino/pegasus_arm/pegasus_arm.ino)
+  add_dependencies(pegasus pegasus_arduino_sim)
+endif()
 
 # --- Offline tests (no window, no board): ctest --test-dir build --output-on-failure ---
 option(PEGASUS_BUILD_TESTS "Build the offline tests" ON)

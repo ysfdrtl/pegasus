@@ -21,12 +21,21 @@ bool hasStlExt(const std::string& name) {
 }
 } // namespace
 
+namespace {
+// user's home folder: HOME on Linux / macOS, USERPROFILE on Windows
+fs::path homeDir() {
+    if (const char* h = std::getenv("HOME")) return fs::path(h);
+    if (const char* h = std::getenv("USERPROFILE")) return fs::path(h);
+    std::error_code ec;
+    return fs::current_path(ec).root_path();
+}
+} // namespace
+
 FileBrowser::FileBrowser(const char* title, bool directoryMode) : title_(title), directoryMode_(directoryMode) {
     std::error_code ec;
     dir_ = fs::current_path(ec);
     if (ec) {
-        const char* home = std::getenv("HOME");
-        dir_ = home ? fs::path(home) : fs::path("/");
+        dir_ = homeDir();
     }
 }
 
@@ -68,7 +77,7 @@ bool FileBrowser::draw(std::string& outPath) {
     }
     ImGui::SameLine();
     if (ImGui::Button("Ev")) {
-        if (const char* home = std::getenv("HOME")) dir_ = home;
+        dir_ = homeDir();
         refresh();
     }
     ImGui::SameLine();

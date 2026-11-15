@@ -2,7 +2,7 @@
 set(ROBOT_DIR "${CMAKE_SOURCE_DIR}/robot kol stl parçaları")
 
 function(pegasus_test name)
-  add_executable(${name} ${name}.cpp)
+  add_executable(${name} ${name}.cpp ${PEGASUS_WIN_MANIFEST})
   target_link_libraries(${name} PRIVATE pegasus_core)
   target_compile_definitions(${name} PRIVATE
     PEGASUS_ROBOT_DIR="${ROBOT_DIR}"

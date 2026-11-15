@@ -110,5 +110,26 @@ int main() {
         MeshPtr none = loadStl((dir / "yok.stl").string(), err);
         CHECK(!none && !err.empty(), "olmayan dosya: anlasilir hata (" + err + ")");
     }
+
+    section("6) Turkce karakterli yollar (UTF-8, Windows'ta da)");
+    {
+        namespace fs = std::filesystem;
+        // the app passes paths around as UTF-8 std::string (like "robot kol stl parçaları")
+        const std::string dir = std::string(PEGASUS_TEST_TMP) + "/klasör_çığüşö İ";
+        const std::string file = dir + "/parça_ş.stl";
+        fs::create_directories(dir);
+        {
+            std::ofstream f(file);
+            f << "solid t\nfacet normal 0 0 1\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\nendloop\nendfacet\nendsolid t\n";
+        }
+        bool listed = false;
+        std::error_code ec;
+        for (const auto& e : fs::directory_iterator(dir, ec)) listed |= e.path().filename().string() == "parça_ş.stl";
+        std::string err;
+        MeshPtr m = loadStl(file, err);
+        CHECK(fs::exists(file) && listed, "Turkce karakterli klasor ve dosya olusturuldu, adi dogru listeleniyor");
+        CHECK(m && m->triangles.size() == 1, "Turkce karakterli yoldan STL okundu " + err);
+        CHECK(m && m->name == "parça_ş", "dosya adindan gelen parca adi bozulmadi");
+    }
     return pegasus_test::finish("geom_test");
 }
