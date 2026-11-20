@@ -412,7 +412,8 @@ bool planSurfaceScan(const std::vector<ScanFace>& faces, const MotionDef& def, c
             stats.warnings.push_back("Geçiş yolu için engelsiz bir rota bulunamadı; geçişte çarpışma olabilir.");
         return best;
     };
-    auto link = [&](const PathPoint& from, const PathPoint& to, bool lifted) {
+    // `from` by value: callers pass out.back(), and push_back below may reallocate `out`
+    auto link = [&](const PathPoint from, const PathPoint& to, bool lifted) {
         if (!lifted && segmentFree(from.pos, to.pos)) {
             addLine(from.pos, to.pos, from.dir, to.dir);
             return;
